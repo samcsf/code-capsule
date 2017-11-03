@@ -4,7 +4,8 @@
   "description": "A tiny code repo, capsule for code snippets.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha",
+    "start": "node index.js"
   },
   "author": "Sam Fu",
   "license": "MIT",
