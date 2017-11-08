@@ -5,7 +5,6 @@ const getSnippet = {
   schema: {
     querystring: {
       type: 'object',
-      required: ['name'],
       properties: {
         name: {
           type: 'string',
@@ -19,30 +18,33 @@ const getSnippet = {
         require: [ 'data' ],
         properties: {
           data: { 
-            type: 'object',
-            properties: {
-              snippet_name: {
-                type: 'string'
-              },
-              snippet_desc: {
-                type: 'string'
-              },
-              snippet_tags: {
-                type: 'array',
-                items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                snippet_name: {
                   type: 'string'
-                }
-              },
-              snippet_contents: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    version: {
-                      type: 'string'
-                    },
-                    snippet: {
-                      type: 'string'
+                },
+                snippet_desc: {
+                  type: 'string'
+                },
+                snippet_tags: {
+                  type: 'array',
+                  items: {
+                    type: 'string'
+                  }
+                },
+                snippet_contents: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      version: {
+                        type: 'string'
+                      },
+                      snippet: {
+                        type: 'string'
+                      }
                     }
                   }
                 }

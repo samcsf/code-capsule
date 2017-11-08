@@ -10,10 +10,12 @@ class SnippetService {
   }
 
   getSnippet(opts, cb){
-    let record = { snippet_name : opts.name }
-    this.collection.findOne(record, (err, data)=>cb(err, data))
+    let record = {}
+    if (opts.name)
+      record = { snippet_name : opts.name }
+    this.collection.find(record, (err, data)=>cb(err, data))
   }
-  
+
   createSnippet(opts, cb){
     let record = {
       snippet_name: opts.name,

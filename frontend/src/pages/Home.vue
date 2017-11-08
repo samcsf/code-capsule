@@ -7,19 +7,37 @@
     <el-container>
       <el-aside class='cc-home-aside'>
         <div class='search-title'>Search</div>
-        <el-input placeholder="请输入内容" v-model="searchText" class='search-input' @keyup.enter='onSearch'>
-          <i slot="suffix" style='cursor:pointer' class="el-input__icon el-icon-search" @click='onSearch(searchText)'></i>
-        </el-input>
+        <form @submit.prevent='onSearch(searchText)'>
+          <el-input placeholder="请输入内容" v-model="searchText" class='search-input'>
+            <i slot="suffix" style='cursor:pointer' class="el-input__icon el-icon-search" @click='onSearch(searchText)'></i>
+          </el-input>
+        </form>
+        <ul>
+          <li v-for='(r, i) in allRecords' :key='"names"+i' @click='result=allRecords[i]' style='text-align:left'>{{r.name}}</li>
+        </ul>
       </el-aside>
       <el-main>
         <el-card v-if='result.contents' class="cc-home-card">
           <div slot="header" class="clearfix">
             <span>{{result.name}}</span>
-            <el-button style="float: right; padding: 3px 0;" type="text" @click='editFormVisible = true'>Edit</el-button>
+            <el-button style="float: right; padding: 3px 0;color: red;" type="text" @click='delFormVisible = true;genVerifyCode()'>Delete</el-button>
+            <el-dialog title="Delete Snippet" :visible.sync="delFormVisible" v-loading="loading" :element-loading-text="loadingText">
+              <el-form :model="delForm">
+                <el-form-item label="Please input the following number to confirm:">
+                  <span>{{delForm.verifyCode}}</span>
+                  <el-input v-model="delForm.inputCode" auto-complete="off"></el-input>
+                </el-form-item>
+              </el-form>
+              <div slot="footer" class="dialog-footer">
+                <el-button @click="delFormVisible = false">Cancel</el-button>
+                <el-button type="primary" @click="submitDelete">Confirm</el-button>
+              </div>
+            </el-dialog>
+            <el-button style="float: right; padding: 3px 0;margin-right: 8px;" type="text" @click='editFormVisible = true'>Edit</el-button>
             <el-dialog title="Edit Snippet" :visible.sync="editFormVisible" v-loading="loading" :element-loading-text="loadingText" @close='onEditClose'>
               <el-form ref="form" :model="editForm" label-width="80px">
                 <el-form-item label="Name">
-                  <el-input v-model="editForm.name" disabled='true'></el-input>
+                  <el-input v-model="editForm.name" :disabled='true'></el-input>
                 </el-form-item>
                 <el-form-item label="Description">
                   <el-input v-model="editForm.desc"></el-input>
@@ -127,18 +145,24 @@ export default {
         snippet: '',
         version: ''
       },
+      delForm: {
+        verifyCode: '',
+        inputCode: ''
+      },
       dialogFormVisible: false,
       editFormVisible: false,
+      delFormVisible: false,
       loading: false,
       loadingText: '',
-      rocketStyle: ''
+      rocketStyle: '',
+      allRecords: {}
     }
   },
   methods: {
     onSearch (text) {
       axios.get('/api/snippets' + '?name=' + text)
         .then(res => {
-          let data = res.data.data
+          let data = res.data.data[0]
           let record = {
             name: data.snippet_name,
             desc: data.snippet_desc,
@@ -286,6 +310,43 @@ export default {
     onEditClose () {
       // reset the form
       this.initEditForm(this.result)
+    },
+    genVerifyCode () {
+      let code = parseInt(Math.random() * 1000000, 10)
+      this.delForm.verifyCode = code > 99999 ? code : code * 10
+      return code
+    },
+    submitDelete () {
+      if (this.delForm.verifyCode !== this.delForm.inputCode * 1) {
+        this.$message.error({
+          message: 'Verify code not correct!'
+        })
+        return
+      }
+
+      // show loading
+      this.loadingText = 'Deleting..'
+      this.loading = true
+      axios.delete('/api/snippets' + '?name=' + this.result.name)
+        .then(res => {
+           // stop loading
+          this.stopLoading()
+          if (res.status === 200) {
+            // clear & hide dialog
+            this.delFormVisible = false
+            this.result = {}
+            // show success msg
+            this.$message({
+              message: 'Snippet Deleted Successfully',
+              type: 'success'
+            })
+          } else {
+            // show fail msg
+            this.$message.error({
+              message: 'Snippet Failed to delete'
+            })
+          }
+        })
     }
   },
   watch: {
@@ -311,6 +372,20 @@ export default {
   },
   components: {
     EditForm
+  },
+  created () {
+    axios.get('/api/snippets')
+        .then(res => {
+          let data = res.data.data
+          this.allRecords = data.map(d => {
+            return {
+              name: d.snippet_name,
+              desc: d.snippet_desc,
+              tags: d.snippet_tags,
+              contents: d.snippet_contents
+            }
+          })
+        })
   }
 }
 </script>
