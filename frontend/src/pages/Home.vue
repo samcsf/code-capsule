@@ -19,46 +19,11 @@
       <el-main>
         <el-card v-if='result.contents' class="cc-home-card">
           <div slot="header" class="clearfix">
-            <span>{{result.name}}</span>
-            <el-button style="float: right; padding: 3px 0;color: red;" type="text" @click='delFormVisible = true;genVerifyCode()'>Delete</el-button>
-            <el-dialog title="Delete Snippet" :visible.sync="delFormVisible" v-loading="loading" :element-loading-text="loadingText">
-              <el-form :model="delForm">
-                <el-form-item label="Please input the following number to confirm:">
-                  <span>{{delForm.verifyCode}}</span>
-                  <el-input v-model="delForm.inputCode" auto-complete="off"></el-input>
-                </el-form-item>
-              </el-form>
-              <div slot="footer" class="dialog-footer">
-                <el-button @click="delFormVisible = false">Cancel</el-button>
-                <el-button type="primary" @click="submitDelete">Confirm</el-button>
-              </div>
-            </el-dialog>
+            <span><b>{{result.name}}</b></span>
+            <el-button style="float: right; padding: 3px 0;color: red;" type="text" @click='delFormVisible = true'>Delete</el-button>
+            <DeleteForm title='Delete Snippet' :show.sync="delFormVisible" :deleteKey="result.name" submitText="Confirm" @updated="refreshPage" />
             <el-button style="float: right; padding: 3px 0;margin-right: 8px;" type="text" @click='editFormVisible = true'>Edit</el-button>
-            <el-dialog title="Edit Snippet" :visible.sync="editFormVisible" v-loading="loading" :element-loading-text="loadingText" @close='onEditClose'>
-              <el-form ref="form" :model="editForm" label-width="80px">
-                <el-form-item label="Name">
-                  <el-input v-model="editForm.name" :disabled='true'></el-input>
-                </el-form-item>
-                <el-form-item label="Description">
-                  <el-input v-model="editForm.desc"></el-input>
-                </el-form-item>
-                <el-form-item label="Tag" style='text-align:left;'>
-                  <el-input placeholder="请输入内容" style='width:120px;' v-model='editForm.inputTag'>
-                    <i slot="suffix" style='cursor:pointer;' class="el-icon-circle-plus-outline" @click='addTagToArray(editForm)'></i>
-                  </el-input>
-                  <el-tag v-for='(t,i) in editForm.tags' :key='"dialog-tag"+i' closable @close='editForm.tags.splice(i,1)' style='margin-right:3px'>{{t}}</el-tag>
-                </el-form-item>
-                <el-form-item label="Version">
-                  <el-input v-model="editForm.version"></el-input>
-                </el-form-item>
-                <el-form-item label="Snippet">
-                  <el-input type="textarea" v-model="editForm.snippet"></el-input>
-                </el-form-item>
-              </el-form>
-              <div slot="footer" class="dialog-footer">
-                <el-button type="primary" @click="submitEdit">Commit</el-button>
-              </div>
-            </el-dialog>
+            <EditForm title="Edit Snippet" :data="result" :show.sync="editFormVisible" submitText="Update" formType="edit" @updated="refreshPage"/>
           </div>
           <div class="card-desc">
             <span><b>Desc:</b></span>
@@ -85,32 +50,8 @@
         </el-card>
         <div v-else>Type name to find snippet</div>
         <div class='cc-home-edit-group'>
-          <el-button @click="dialogFormVisible = true" class='create-button'>Create New</el-button>
-          <el-dialog title="New Snippet" :visible.sync="dialogFormVisible" v-loading="loading" :element-loading-text="loadingText">
-            <el-form ref="form" :model="form" label-width="80px">
-              <el-form-item label="Name">
-                <el-input v-model="form.name"></el-input>
-              </el-form-item>
-              <el-form-item label="Description">
-                <el-input v-model="form.desc"></el-input>
-              </el-form-item>
-              <el-form-item label="Tag" style='text-align:left;'>
-                <el-input placeholder="请输入内容" style='width:120px;' v-model='form.inputTag'>
-                  <i slot="suffix" style='cursor:pointer;' class="el-icon-circle-plus-outline" @click='addTagToArray(form)'></i>
-                </el-input>
-                <el-tag v-for='(t,i) in form.tags' :key='"dialog-tag"+i' closable @close='form.tags.splice(i,1)' style='margin-right:3px'>{{t}}</el-tag>
-              </el-form-item>
-              <el-form-item label="Version">
-                <el-input v-model="form.version"></el-input>
-              </el-form-item>
-              <el-form-item label="Snippet">
-                <el-input type="textarea" v-model="form.snippet"></el-input>
-              </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-              <el-button type="primary" @click="submitCreate">Create</el-button>
-            </div>
-          </el-dialog>
+          <el-button @click="createFormVisible = true" class='create-button'>Create New</el-button>
+          <EditForm title="Create Snippet" :show.sync="createFormVisible" submitText="Create" formType="create" @updated="refreshPage"/>
         </div>
       </el-main>
     </el-container>
@@ -121,6 +62,7 @@
 import hljs from 'highlight.js'
 import axios from 'axios'
 import EditForm from '../components/EditForm'
+import DeleteForm from '../components/DeleteForm'
 
 export default {
   name: 'home',
@@ -129,31 +71,9 @@ export default {
       searchText: '',
       result: '',
       currentVersion: '',
-      form: {
-        name: '',
-        desc: '',
-        inputTag: '',
-        tags: [],
-        snippet: '',
-        version: ''
-      },
-      editForm: {
-        name: '',
-        desc: '',
-        inputTag: '',
-        tags: [],
-        snippet: '',
-        version: ''
-      },
-      delForm: {
-        verifyCode: '',
-        inputCode: ''
-      },
-      dialogFormVisible: false,
+      createFormVisible: false,
       editFormVisible: false,
       delFormVisible: false,
-      loading: false,
-      loadingText: '',
       rocketStyle: '',
       allRecords: {}
     }
@@ -177,70 +97,6 @@ export default {
       // todo: Detect language or another API to generate with <code> tag surrounded
       return `<div class="highlight"><pre><code class="js hljs javascript">${html.value}</code></pre></div>`
     },
-    addTagToArray (form) {
-      if (form.inputTag !== '') {
-        form.tags.push(form.inputTag)
-      }
-      form.inputTag = ''
-    },
-    submitCreate () {
-      // show loading
-      this.loadingText = 'Creating Snippet..'
-      this.loading = true
-
-      let form = this.form
-      let record = {
-        name: form.name,
-        desc: form.desc,
-        tags: form.tags,
-        contents: [{version: form.version, snippet: form.snippet}]
-      }
-      axios.post('/api/snippets', record)
-        .then(res => {
-          // stop loading
-          this.stopLoading()
-          if (res.status === 200) {
-            // clear & hide dialog
-            this.initForm()
-            this.dialogFormVisible = false
-            // show success msg
-            this.$message({
-              message: 'Snippet Created Successfully',
-              type: 'success'
-            })
-          } else {
-            // show fail msg
-            this.$message.error({
-              message: 'Snippet Failed to create'
-            })
-          }
-        })
-        .catch(err => {
-          console.error(err)
-          this.stopLoading()
-          this.$message.error({
-            message: 'Snippet Failed to create'
-          })
-        })
-    },
-    showLoading (text) {
-      if (text !== '') {
-        this.loadingText = text
-      }
-      this.loading = true
-    },
-    stopLoading () {
-      this.loadingText = ''
-      this.loading = false
-    },
-    initForm () {
-      this.form.name = ''
-      this.form.desc = ''
-      this.form.inputTag = ''
-      this.form.tags = []
-      this.form.version = ''
-      this.form.snippet = ''
-    },
     setOnFire () {
       if (this.rocketStyle === '') {
         this.rocketStyle = 'fire'
@@ -250,110 +106,14 @@ export default {
         }, 2500)
       }
     },
-    submitEdit () {
-      // show loading
-      this.loadingText = 'Updating..'
-      this.loading = true
-
-      let form = this.editForm
-      let record = {
-        name: form.name,
-        desc: form.desc,
-        tags: form.tags,
-        contents: [{version: form.version, snippet: form.snippet}]
-      }
-      axios.put('/api/snippets', record)
-        .then(res => {
-          // stop loading
-          this.stopLoading()
-          if (res.status === 200) {
-            // hide dialog
-            this.editFormVisible = false
-            // show success msg
-            this.$message({
-              message: 'Snippet Updated!',
-              type: 'success'
-            })
-            this.onSearch(record.name)
-          } else {
-            // show fail msg
-            this.$message.error({
-              message: 'Snippet Failed to update'
-            })
-          }
-        })
-        .catch(err => {
-          console.error(err)
-          this.stopLoading()
-          this.$message.error({
-            message: 'Snippet Failed to update'
-          })
-        })
-    },
-    initEditForm (newForm) {
-      let form = this.editForm
-      if (newForm === undefined) {
-        form.name = ''
-        form.desc = ''
-        form.tags = []
-        form.version = ''
-        form.snippet = ''
-        return
-      }
-      form.name = newForm.name
-      form.desc = newForm.desc
-      form.tags = []
-      Object.assign(form.tags, newForm.tags)
-      form.version = newForm.contents[0].version
-      form.snippet = newForm.contents[0].snippet
-    },
-    onEditClose () {
-      // reset the form
-      this.initEditForm(this.result)
-    },
-    genVerifyCode () {
-      let code = parseInt(Math.random() * 1000000, 10)
-      this.delForm.verifyCode = code > 99999 ? code : code * 10
-      return code
-    },
-    submitDelete () {
-      if (this.delForm.verifyCode !== this.delForm.inputCode * 1) {
-        this.$message.error({
-          message: 'Verify code not correct!'
-        })
-        return
-      }
-
-      // show loading
-      this.loadingText = 'Deleting..'
-      this.loading = true
-      axios.delete('/api/snippets' + '?name=' + this.result.name)
-        .then(res => {
-           // stop loading
-          this.stopLoading()
-          if (res.status === 200) {
-            // clear & hide dialog
-            this.delFormVisible = false
-            this.result = {}
-            // show success msg
-            this.$message({
-              message: 'Snippet Deleted Successfully',
-              type: 'success'
-            })
-          } else {
-            // show fail msg
-            this.$message.error({
-              message: 'Snippet Failed to delete'
-            })
-          }
-        })
+    refreshPage () {
+      console.log('Refresh triggered..')
     }
   },
   watch: {
     // CAN NOT USE ()=>{} ARROW FUNCTION in WATCH !!!
     result: function (val, oldVal) {
       this.currentVersion = val.contents[0].version
-      this.initEditForm(val)
     }
   },
   computed: {
@@ -369,9 +129,11 @@ export default {
   },
   mounted () {
     hljs.initHighlightingOnLoad()
+    this.setOnFire()
   },
   components: {
-    EditForm
+    EditForm,
+    DeleteForm
   },
   created () {
     axios.get('/api/snippets')
@@ -454,11 +216,14 @@ export default {
 
 .cc-home-card
   text-align: left
+  b
   .card-tags-item
     margin-right: 5px
   .card-contents
     select
       margin-left: 5px
+    code
+      border-radius: 5px
 
 .cc-home-edit-group
   position: relative
