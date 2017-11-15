@@ -10,6 +10,12 @@ const getSnippet = {
           type: 'string',
           pattern: '^\\D[\\w-_]*'
         },
+        pageSize: {
+          type: 'number'
+        },
+        page: {
+          type: 'number' 
+        }
       }
     },
     response: {

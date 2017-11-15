@@ -11,9 +11,13 @@ class SnippetService {
 
   getSnippet(opts, cb){
     let record = {}
+    let {page, pageSize} = opts
     if (opts.name)
       record = { snippet_name : opts.name }
-    this.collection.find(record, (err, data)=>cb(err, data))
+    if (!opts.page && !opts.pageSize)
+      this.collection.find(record, (err, data)=>cb(err, data))
+    else
+      this.collection.find(record).sort({ snippet_name: 1}).skip((page-1)*pageSize).limit(pageSize).exec((err, data)=>cb(err, data))
   }
 
   createSnippet(opts, cb){
