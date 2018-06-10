@@ -1,4 +1,4 @@
-build-frontend: 
+build-frontend: clear
 	cd ./frontend; npm run build
 	mv ./frontend/dist ./public
 
