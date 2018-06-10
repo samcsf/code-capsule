@@ -34,7 +34,7 @@ module.exports = function(fastify, opts, next){
       fastify.decorate('snippetService', new SnippetService(fastify.snippetCollection))
       done()
     }))
-    fastify.register(setupRoutes)
+    fastify.register(setupRoutes, { prefix: '/api' })
     done()
   })
   next()  
