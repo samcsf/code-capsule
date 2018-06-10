@@ -160,8 +160,46 @@ const deleteSnippet = {
   }
 }
 
+const getSnippetHints = {
+  schema: {
+    querystring: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string'
+        },
+        resultSize: {
+          type: 'number'
+        }
+      }
+    }
+  }
+}
+ 
+const getSnippetByTags = {
+  schema: {
+    querystring: {
+      type: 'object',
+      properties: {
+        tags: {
+          type: ['array','string'],
+          item: { type: 'string'}
+        },
+        pageSize: {
+          type: 'number'
+        },
+        page: {
+          type: 'number' 
+        }
+      }
+    }
+  }
+}
+
 module.exports = {
   getSnippet,
   createSnippet,
-  deleteSnippet
+  deleteSnippet,
+  getSnippetHints,
+  getSnippetByTags
 }

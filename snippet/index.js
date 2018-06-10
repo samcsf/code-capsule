@@ -4,7 +4,9 @@ const SnippetService = require('./SnippetService')
 //validation schema
 const { getSnippet: getSnippetSchema,
         createSnippet: createSnippetSchema,
-        deleteSnippet: deleteSnippetSchema } = require('./schemas')
+        deleteSnippet: deleteSnippetSchema,
+        getSnippetHints: searchSnippetSchema,
+        getSnippetByTags: filterSnippetSchema } = require('./schemas')
 //db schema
 const snippetSchema = require('./db')
 
@@ -66,6 +68,14 @@ function setupRoutes(fastify, opts, next){
 
   fastify.delete('/snippets', deleteSnippetSchema, (req, reply)=>{
     snippetService.deleteSnippet(req.query, replyWrapper(reply))
+  })
+
+  fastify.get('/search', searchSnippetSchema, (req, reply)=>{
+    snippetService.getSnippetHints(req.query, replyWrapper(reply))
+  })
+
+  fastify.get('/filter', filterSnippetSchema, (req, reply)=>{
+    snippetService.getSnippetByTags(req.query, replyWrapper(reply))
   })
 
   next()

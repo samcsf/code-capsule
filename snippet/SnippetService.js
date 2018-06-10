@@ -20,6 +20,24 @@ class SnippetService {
       this.collection.find(record).sort({ snippet_name: 1}).skip((page-1)*pageSize).limit(pageSize).exec((err, data)=>cb(err, data))
   }
 
+  getSnippetHints(opts, cb){
+    let {text, resultSize} = opts
+    this.collection.find({snippet_name: new RegExp(`^${text}`)},{_id: 0,snippet_name: 1}).sort({ snippet_name: 1}).limit(resultSize).exec((err, data)=>cb(err, data))
+  }
+
+  getSnippetByTags(opts, cb){
+    let {tags} = opts
+    let {page, pageSize} = opts
+    let query = {
+      snippet_tags: {$all: tags} // $all act as 'like' here
+    }
+    console.log(query)
+    if (!opts.page && !opts.pageSize)
+      this.collection.find(query, (err, data)=>cb(err, data))
+    else
+      this.collection.find(query, {_id: 0,snippet_name: 1}).sort({ snippet_name: 1}).skip((page-1)*pageSize).limit(pageSize).exec((err, data)=>cb(err, data))
+  }
+
   createSnippet(opts, cb){
     let record = {
       snippet_name: opts.name,

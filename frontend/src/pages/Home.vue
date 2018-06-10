@@ -8,9 +8,19 @@
       <el-aside class='cc-home-aside'>
         <div class='search-title'>Search</div>
         <form @submit.prevent='onSearch(searchText)'>
-          <el-input placeholder="请输入内容" v-model="searchText" class='search-input'>
+          <!-- <el-input placeholder="请输入内容" v-model="searchText" class='search-input'>
             <i slot="suffix" style='cursor:pointer' class="el-input__icon el-icon-search" @click='onSearch(searchText)'></i>
-          </el-input>
+          </el-input> -->
+           <el-autocomplete
+            class='search-input'
+            v-model="searchText"
+            :fetch-suggestions="querySearch"
+            placeholder="请输入内容"
+            :trigger-on-focus="false"
+            @select="handleSelect"
+          >
+            <i slot="suffix" style='cursor:pointer' class="el-input__icon el-icon-search" @click='onSearch(searchText)'></i>
+          </el-autocomplete>
         </form>
         <ul>
           <li v-for='(r, i) in allRecords' :key='"names"+i' @click='result=allRecords[i]' style='text-align:left'>{{r.name}}</li>
@@ -91,6 +101,12 @@ export default {
           }
           this.result = record
         })
+        .catch(err => {
+          if (err) {
+            console.error(err)
+          }
+          this.result = {}
+        })
     },
     highlight (code) {
       let html = hljs.highlight('js', code)
@@ -108,6 +124,21 @@ export default {
     },
     refreshPage () {
       console.log('Refresh triggered..')
+    },
+    querySearch (qs, cb) {
+      axios.get('/api/search?text=' + qs + '&resultSize=10')
+        .then(res => {
+          let data = res.data.data
+          let names = data.map(t => {
+            return {value: t.snippet_name}
+          })
+          console.log('Search hints: ' + JSON.stringify(names))
+          cb(names)
+        })
+    },
+    handleSelect (qs) {
+      this.onSearch(qs.value)
+      this.searchText = ''
     }
   },
   watch: {
@@ -136,7 +167,7 @@ export default {
     DeleteForm
   },
   created () {
-    axios.get('/api/snippets')
+    axios.get('/api/snippets?page=1&pageSize=10')
         .then(res => {
           let data = res.data.data
           this.allRecords = data.map(d => {
