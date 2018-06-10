@@ -1,4 +1,6 @@
-const fastify = require('fastify')()
+const fastify = require('fastify')({
+  logger: true
+})
 const path = require('path')
 const snippet = require('./snippet')
 const HOST = process.env.MONGODB_PORT_27017_TCP_ADDR || '0.0.0.0'
@@ -9,7 +11,7 @@ fastify.register(require('fastify-static'), {
 })
 fastify.register(snippet, {DB_URL: 'mongodb://' + HOST + ':' + PORT + '/code-capsule-dev'})
 
-fastify.listen(8809, err=>{
+fastify.listen(8809, '0.0.0.0', err=>{
   if(err) throw err
   console.log(`Fastify running on port ${fastify.server.address().port}`)
 })
