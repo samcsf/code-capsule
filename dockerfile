@@ -1,5 +1,5 @@
 # Runtime set up
-FROM node:boron
+FROM node:alpine
 
 # Create app directory
 WORKDIR /root/docker/code-capsule
